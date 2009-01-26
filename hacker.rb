@@ -80,7 +80,7 @@ end
 
 class HackerInterface
   def initialize
-    @root = TkRoot.new(){title 'Style Tool'}
+    @root = TkRoot.new(){title 'VLHT'}
     @hacker = WordCracker.new
 
     #first, the word list
