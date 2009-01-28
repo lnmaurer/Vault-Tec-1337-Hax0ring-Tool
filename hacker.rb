@@ -80,7 +80,7 @@ end
 
 class HackerInterface
   def initialize
-    @root = TkRoot.new(){title 'Style Tool'}
+    @root = TkRoot.new(){title 'VLHT'}
     @hacker = WordCracker.new
 
     #first, the word list
@@ -164,8 +164,6 @@ class HackerInterface
     @wordList = suggestion.collect{|word,left| word}
     if @hacker.words.size == 0
       @words.value = ['']
-#    elsif @hacker.words.size == 1
-#      @words.value = @hacker.words
     else
       @words.value = suggestion.collect{|word,left| "#{word} #{left}"}
     end
