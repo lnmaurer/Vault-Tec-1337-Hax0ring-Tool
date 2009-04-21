@@ -21,11 +21,7 @@
 require 'tk'
 
 def lettersInCommon(word1, word2)
-  count = 0
-  for i in (0..word1.length-1)
-    count += 1 if word1[i] == word2[i]
-  end
-  count
+  word1.split(//).zip(word2.split(//)).inject(0){|sum,c| sum + (c[0] == c[1] ? 1 : 0)}
 end
 
 class WordLenghtError < ArgumentError
@@ -62,17 +58,33 @@ class WordCracker
     @words.reject!{|word| (word == wrongword) or (lettersInCommon(word,wrongword) != correct)}
   end
   def suggestWords
+    #makes an maxtrix where element i,j is how many letters are in common between word i and word j
     commonMatrix = @words.collect{|word1|
       @words.collect{|word2|
         lettersInCommon(word1,word2)
       }
     }
+    #calculate the expected value for how many words will be left after
+    #choosing a word, there is one element for each word, and they're in the
+    #same order as in @words
     expectedkeep = commonMatrix.collect{|arr|
-      #don't want to compare word to iteself, so igonre the case when all the letters are in common
+      #this array will have element n be the number of works that have n
+      #letters in common with the word in question
       types = Array.new(self.wordLength,0)
+      #don't want to compare word to iteself, so igonre the case when all the
+      #letters are in common
       arr.each{|val| types[val] += 1 unless val == self.wordLength}
+      #to calculate the expected value for a given word:
+      #Pn will be the probability that the word has n correct letters, and Nn
+      #will be the number of other words that have n letters in common with our
+      #given word. So, for our given word,
+      #our expected value = P0*N0 + P1*N1 + P2*N2 + P3*N3 + ...
+      #Now, Pn = Nn/(# of oterh words) since each word is equally likely to be
+      #the correct word. So, the expected value boils down to:
+      #(N0^2 + N1^2 + N3^2 + ...)/(# of other words)
       expectedKeep = types.inject(0.0){|p,num| p + num**2/(@words.size - 1.0)}
     }
+    #put words and their expected values together, then sort by the expected keep
     @words.zip(expectedkeep).sort_by{|word,keep| keep}
   end
 
