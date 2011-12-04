@@ -3,6 +3,8 @@ Copyright (C) 2011  Leon N. Maurer
 
 It was getting tiresome to use pencil and paper to work through the hacking mini-game in Fallout 3 and Fallout: New Vegas, so I created this program.
 
+See https://mywebspace.wisc.edu/lnmaurer/web/vlht/vlht.html for graphical instructions.
+
 How does it work? First, you enter in the words in play. This program will recommend which word to chose to rule out the most other words. The number it displays next to the word is the expected number of words left after you choose that word and enter in the number of correct letters it has. So, you want to choose the word with the smallest number next to it, which is at the top of the list. After you try a word, the program will remove words that are no longer possible candidates (e.g. if you chose "released" and were told it had 4 letters correct, then "defeated" is no longer an option since it has 5 letters in common with "released"). Rinse, lather, repeat. There are no guarantees that it will solve the puzzle with 4 guesses, but it has yet to fail me.
 
 The program also has some nice features to keep you from making mistakes, like a wordlist to make sure you entered the word correctly.
@@ -18,7 +20,7 @@ ExpectValue = (N0^2 + N1^2 + N3^2 + ...)/(number of other words)
 
 That's the score the program displays next to each word; you want to choose the word with the smallest score to eliminate the most other words on average.
 
-This program can use a wordlist to check for mispellings in the words entered.
+This program can use a wordlist to check for misspellings in the words entered.
 This should either a text file with one word per line, or a gzipped version of
 that file. If no file is provided, the program will still run.
 
