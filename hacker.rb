@@ -24,8 +24,6 @@
 #You can also receive a paper copy by writing the Free Software
 #Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#TODO: ADD UNDO ABILITY
-
 require 'tk'
 require 'tkextlib/tile'
 begin #check to see if zlib is installed
@@ -40,7 +38,7 @@ def lettersInCommon(word1, word2)
   word1.split(//).zip(word2.split(//)).inject(0){|sum,c| sum + (c[0] == c[1] ? 1 : 0)}
 end
 
-#for error where a word of the wrong lenght is entered
+#for when a word of the wrong length is entered
 class WordLenghtError < ArgumentError
 end
 
@@ -48,7 +46,7 @@ end
 class SpellingError < ArgumentError
 end
 
-#for when a word
+#for when the number of correct letters for a word is impossible because it eliminates all remaining words
 class NumberCorrectError < ArgumentError
 end
 
