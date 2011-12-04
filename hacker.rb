@@ -27,12 +27,13 @@
 #TODO: ADD UNDO ABILITY
 
 require 'tk'
+require 'tkextlib/tile'
 begin #check to see if zlib is installed
   require 'zlib'
 rescue Exception
   $useGZ = false
 else
-  $useGz = true
+  $useGZ = true
 end
 
 def lettersInCommon(word1, word2)
@@ -58,7 +59,7 @@ class WordCracker
 
   def initialize()
     @words = [] #holds the current array of words
-#     @oldWords = [] #holds past arrays of words so that we can undo
+    @oldWords = [] #holds past arrays of words so that we can undo
   end
   
   def wordLength
@@ -75,12 +76,16 @@ class WordCracker
     elsif (not forceSpelling) and (not WordCracker.validSpelling(word))
       raise SpellingError, "Word spelling not found"
     else
+      self.saveWords
       @words << word
     end
   end
   
   def remove(word)
-    @words.delete(word)
+    if @words.include?(word)
+      self.saveWords
+      @words.delete(word)
+    end
   end
   #this function updates the list after a word is tried and the number of correct letters is found
   def tried(wrongword, correct)
@@ -88,6 +93,7 @@ class WordCracker
     if wordsAfter.size == 0
       raise NumberCorrectError
     else
+      self.saveWords
       @words = wordsAfter
     end
   end
@@ -122,7 +128,14 @@ class WordCracker
     #put words and their expected values together, then sort by the expected keep
     @words.zip(expectedkeep).sort_by{|word,keep| keep}
   end
-  #assign the word list as an array. Note that this function handles stripping and upcasing the words in the array.
+  #saves the current word list so that changes can be undone
+  def saveWords
+    @oldWords << @words.dup
+  end
+  def undo
+    @words = @oldWords.pop if @oldWords.size != 0
+  end
+  #assign the word list as an array. Note that this function handles stripping and upcasing the words in the array.  
   def self.wordList=(wordList)
     @@wordList = wordList.collect{|w| w.strip.upcase}
   end
@@ -138,13 +151,16 @@ class HackerInterface
     @hacker = WordCracker.new
     @wordEntry = TkVariable.new #for the word entry box
     @correctLetters = TkVariable.new #for the number of letters correct entry box
+    wordListMessage = 'No wordlist found' #holds a message about whether a word-list was loaded
     
-    if $useGz and File.exists?("words.gz") #if we have zlib and a gzipped wordlist, use it
+    if $useGZ and File.exists?("words.gz") #if we have zlib and a gzipped wordlist, use it
       File.open("words.gz") do |f|
 	WordCracker.wordList = Zlib::GzipReader.new(f).read.split(/\n/)
       end
+      wordListMessage = 'Loaded words.gz'
     elsif File.exists?("words.txt") #otherwise, check for a non-gzipped list of words
       WordCracker.wordList = File.read("words.txt").split(/\n/)
+      wordListMessage = 'Loaded words.txt'
     end
 
     #the list of entered words takes up the first row in the interface
@@ -158,7 +174,7 @@ class HackerInterface
     
     #the scroll bar that goes with it
     scroll = proc{|*args| @list.yview(*args)}
-    @lbscroll = TkScrollbar.new(@root) {
+    @lbscroll = Tk::Tile::Scrollbar.new(@root) {
       orient 'vertical'
       command scroll
     }.grid(:column=>4,:row=>0,:sticky=>'wns')
@@ -186,16 +202,15 @@ class HackerInterface
     end
     
     #The next row in the interface is for adding words
-    TkLabel.new(@root){
+    Tk::Tile::Label.new(@root){
       text 'Word:'
     }.grid('column'=>0, 'row'=>1,'sticky'=>'wns')
-    wordEntryBox = TkEntry.new(@root) {
+    wordEntryBox = Tk::Tile::Entry.new(@root) {
       width 15
-      relief  'sunken'
     }.grid(:column=>1,:row=> 1,:sticky=>'w')
     wordEntryBox.textvariable(@wordEntry)
     wordEntryBox.bind("Any-Key-Return", addProc)
-    TkButton.new(@root) {
+    Tk::Tile::Button.new(@root) {
       text    'Add'
       command addProc
     }.grid(:column=>2,:row=>1)
@@ -214,30 +229,42 @@ class HackerInterface
           :message=>'There are no words with that number of correct letters. Either you entered the wrong number, or atleast one word is wrong.')
       end
     }
-    TkLabel.new(@root){
+    Tk::Tile::Label.new(@root){
       text 'Correct:'
     }.grid(:column=>0,:row=>2,:sticky=>'wns')
-    correctLettersBox = TkEntry.new(@root) {
+    correctLettersBox = Tk::Tile::Entry.new(@root) {
       width 15
-      relief  'sunken'
     }.grid(:column=>1,:row=> 2,:sticky=>'w')
     correctLettersBox.textvariable(@correctLetters)
     correctLettersBox.bind("Any-Key-Return", updateProc)
-    TkButton.new(@root) {
+    Tk::Tile::Button.new(@root) {
       text    'Update'
       command updateProc
     }.grid(:column=>2,:row=>2)
 
-    #and the final row in the interface only has a delete button
+    #the next row in the interface has buttons for undoing previous actions and removing a word from the list
+    undoProc = proc{
+      @hacker.undo
+      self.updateList
+    }
+    Tk::Tile::Button.new(@root) {
+      text    'Undo'
+      command undoProc
+    }.grid(:column=>1,:row=>3)    
+    
     removeProc = proc{
       @hacker.remove(self.selectedWord)
       self.updateList
     }
-    TkButton.new(@root) {
+    Tk::Tile::Button.new(@root) {
       text    'Remove'
       command removeProc
     }.grid(:column=>2,:row=>3)
 
+    #the last row just notes if a word list was loaded
+    Tk::Tile::Label.new(@root){
+      text wordListMessage
+    }.grid(:column=>0,:columnspan=>3,:row=>4,:sticky=>'ewns')    
   end
   def updateList
     suggestion = @hacker.suggestWords
